@@ -42,7 +42,7 @@ const BigSideBar = () => {
           <Link to='/feed/library' data-for='sidebar' data-tip='Library'>
             <div className='sidebar_icon_container'>
               <MdVideoLibrary size={23} className='sidebar_icon' />
-              <h4 className='sidebar_text'>Librarybbbbb</h4>
+              <h4 className='sidebar_text'>Library</h4>
             </div>
           </Link>
 
