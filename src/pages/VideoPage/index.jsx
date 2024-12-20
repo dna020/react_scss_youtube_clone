@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useContext, useEffect } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import YouTube from 'react-youtube';
 import { SidebarContext } from '../../context/SidebarContext';
@@ -7,11 +7,16 @@ import { BiDislike, BiLike } from 'react-icons/bi';
 import { RiFlagLine, RiShareForwardLine } from 'react-icons/ri';
 import { MdPlaylistAdd } from 'react-icons/md';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import formatNumber from '../../helpers/formatNumber';
 import formatViews from '../../helpers/formatViews';
 import formatText from '../../helpers/formatText';
+import axios from '../../api/axios';
+import RelatedVideos from './RelatedVideo';
 
 const ViedoPage = () => {
+  dayjs.extend(relativeTime);
+
   const {videoId} = useParams();
   let location = useLocation();
   const {state: currentVideo} = location;
@@ -27,9 +32,20 @@ const ViedoPage = () => {
 
   const videoDescription = formatText(currentVideo.snippet.description);
 
-  useEffect(() => {
+  const [videoComments, setVideoComments] = useState([]);
+
+  const loadComment = useCallback(async () => {
     setIsToggled(false);
-  }, [])
+
+    const response = await axios.get(`/commentThreads?part=snippet&videoId=${videoId}`)
+
+    setVideoComments(response.data.items);
+
+  }, [setIsToggled, videoId])
+
+  useEffect(() => {
+    loadComment();
+  }, [loadComment])
 
   const onPlayerReady = (e) => {
     e.target.playVideo();
@@ -42,6 +58,38 @@ const ViedoPage = () => {
       autoplay: 1,
     },
   };
+
+  const videoCommentsMarkup = videoComments.map(item => {
+    const { id, snippet } = item.snippet.topLevelComment;
+    return (
+      <div className='comment_container' key={id}>
+        <div className='comment_avatar_container'>
+          <img src={snippet.authorProfileImageUrl} alt='user avatar' />
+        </div>
+        <div className='comment_text_container'>
+          <div className='comment_author'>
+            {snippet.authorDisplayName}
+          </div>
+          <span>
+            {dayjs(snippet.publishedAt).fromNow()}
+          </span>
+          <div className='comment_text'>
+            {snippet.textOriginal}
+          </div>
+          <div className='comment_buttons'>
+            <div>
+              <BiLike size={16} />
+              <span className='muted'>{snippet.likeCount}</span>
+            </div>
+            <div>
+              <BiDislike size={16} />
+            </div>
+            <span className='muted'>REPLY</span>
+          </div>
+        </div>
+      </div>
+    )
+  })
 
   const videoHeaderMarkup = (
     <div className='video_main_info'>
@@ -68,7 +116,7 @@ const ViedoPage = () => {
       <div className='columns_container'>
         <div className='column column_1'>
           <div className='youtube_player_container'>
-          <YouTube className='youtube-player' videoId={videoId} onPlay={onPlayerReady} opts={opts} />
+          <YouTube className='youtube_player' videoId={videoId} onPlay={onPlayerReady} opts={opts} />
           </div>
           <div className='videoplayer_info'>
             {/* videoHeaderMarkup */}
@@ -130,8 +178,12 @@ const ViedoPage = () => {
             </div>
             <div className='video_comments'>
               {/* videoCommentsMarkup */}
+              {videoCommentsMarkup}
             </div>
           </div>
+        </div>
+        <div className='column column_2'>
+          <RelatedVideos currentVideo={videoId} />
         </div>
       </div>
     </section>

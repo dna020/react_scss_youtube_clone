@@ -36,3 +36,17 @@ export const getVideoInfo = async (videosArr) => {
         console.log(error)
     }
 }
+
+export const getRelatedVideos = async () => {
+    try {
+        // relatedToVideoId 지원 종료로 인해 임시 데이터(relatedToVideoId params 제외) 요청하여 사용
+        const response = await axios.get(
+            `/search?part=snippet&maxResults=10&type=video`
+          )
+
+        return response.data.items
+
+    } catch (error) {
+        console.log(error);
+    }
+}
